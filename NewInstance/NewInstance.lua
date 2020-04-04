@@ -1,6 +1,8 @@
 function addStyle(obj, dfn)
 	local i, val, _type
 	
+	if not dfn then return obj end
+	
 	-- Parenting done last
 	local _parent = dfn.Parent or nil
 	dfn.Parent = nil
@@ -9,10 +11,11 @@ function addStyle(obj, dfn)
 	for i = 1, #dfn do
 		val = dfn[i]
 		_type = typeof(val)
-		if _type == "table" then addStyle(obj, val) -- Style declaration
+		if _type == "table" then
+			addStyle(obj, val) -- Style declaration
 		elseif _type == "function" then val(obj) -- Modifier
 		else -- Add as child
-			if val.LayoutOrder then val.LayoutOrder = i end -- Maintain order for guis
+			if val:IsA("GuiObject") then val.LayoutOrder = i end -- Maintain order for guis
 			val.Parent = obj
 		end
 		dfn[i] = nil
@@ -26,7 +29,8 @@ function addStyle(obj, dfn)
 			if _type == "function" then obj[i](unpack(val)) -- Method with no return (Tweens)
 			else obj[i] = getfenv(0)[_type].new(unpack(val)) -- Create new datatype
 			end
-		elseif _type == "function" and typeof(obj[i]) == "RBXScriptSignal" then obj[i]:Connect(val) -- Event hook
+		elseif _type == "function" and typeof(obj[i]) == "RBXScriptSignal" then
+			local val = val obj[i]:Connect(function (...) val(obj, ...) end) -- Event hook
 		else obj[i] = val
 		end
 	end
@@ -37,9 +41,10 @@ function addStyle(obj, dfn)
 end
 
 function NewInstance(obj)
-	if type(obj) == "string" then obj = Instance.new(obj)
-	else assert(typeof(obj) == "Instance", "Expected instance. Got "..typeof(obj)..".")
-		obj = obj:Clone()
+	if type(obj) == "string" then
+		obj = Instance.new(obj)
+	else
+		assert(typeof(obj) == "Instance", "Expected instance. Got "..typeof(obj)..".")
 	end
 	assert(obj, "Failed to create "..tostring(obj)..'.')
 	return function (dfn) return addStyle(obj, dfn) end
