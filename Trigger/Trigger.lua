@@ -1,69 +1,63 @@
+--[[ Trigger - A ModuleScript by FarFromLittle ]]
+
 export type Trigger = {
-	Touched:RBXScriptSignal;
-	TouchEnded:RBXScriptSignal;
+	Touched:RBXScriptSignal,
+	TouchEnded:RBXScriptSignal
 }
 
 local Trigger = {}
 
-function Trigger.new(touchPart:BasePart, partFilter:(BasePart)->(BasePart)):Trigger
-	local conn:RBXScriptConnection
-	local touchCount:{[BasePart]:number} = {}
-	local touched:BindableEvent = Instance.new("BindableEvent")
-	local touchEnded:BindableEvent = Instance.new("BindableEvent")
+function Trigger.new(touchPart:BasePart, debounce:number?, partFilter:(BasePart)->(any)?, ...:any):Trigger
+	local touched = Instance.new("BindableEvent")
+	local touchEnded = Instance.new("BindableEvent")
+	local extra = ...
 	
 	local self = {
 		Touched = touched.Event,
 		TouchEnded = touchEnded.Event
 	}
 	
-	local function onTouchEnded(hit:BasePart)
-		if partFilter then
-			hit = partFilter(hit)
-			if not hit then return end
-		end
-		
-		-- Give time to twitch
-		task.wait()
-		
-		-- Adjust touch count
-		touchCount[hit] -= 1
-		
-		-- Sink all but last event
-		if 0 < touchCount[hit] then return end
-		
-		-- Remove touch counter
-		touchCount[hit] = nil
-		
-		if conn.Connected then
-			conn:Disconnect()
-		end
-		
-		-- End touch
-		touchEnded:Fire(hit)
-	end
+	local touches = {}
+	local skipCount = {}
 	
-	touchPart.Touched:Connect(function (hit:BasePart)
-		if partFilter then
-			hit = partFilter(hit)
-			if not hit then return end
-		end
+	touchPart.TouchEnded:Connect(function (hit)
+		hit, touches[hit] = touches[hit]
 		
-		if touchCount[hit] then
-			touchCount[hit] += 1
+		if not skipCount[hit] then return end
+		
+		task.wait(debounce)
+		
+		if 0 < skipCount[hit] then
+			skipCount[hit] -= 1
 			return
 		end
 		
-		-- Intiate touch counter
-		touchCount[hit] = 1
+		skipCount[hit] = nil
 		
-		-- Connect touchEnded
-		conn = touchPart.TouchEnded:Connect(onTouchEnded)
-		
-		-- Begin touch
-		touched:Fire(hit)
+		return touchEnded:Fire(hit)
 	end)
 	
-	return setmetatable(self, Trigger)
+	touchPart.Touched:Connect(function (hit)
+		if partFilter then
+			local res = partFilter(hit, extra)
+			if not res then return end
+			touches[hit] = res
+			hit = res
+		end
+		
+		if skipCount[hit] then
+			skipCount[hit] += 1
+			return
+		end
+		
+		skipCount[hit] = 0
+		
+		return touched:Fire(hit)
+	end)
+	
+	setmetatable(self, Trigger)
+	
+	return self
 end
 
 return Trigger
