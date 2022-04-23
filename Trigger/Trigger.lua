@@ -21,7 +21,7 @@ function Trigger.new(touchPart:BasePart, debounce:number?, partFilter:(BasePart)
 	local skipCount = {}
 	
 	touchPart.TouchEnded:Connect(function (hit)
-		hit, touches[hit] = touches[hit]
+		if touches[hit] then hit, touches[hit] = touches[hit] end
 		
 		if not skipCount[hit] then return end
 		
