@@ -10,7 +10,7 @@ local Trigger = {}
 function Trigger.new(touchPart:BasePart, debounce:number?, partFilter:(BasePart)->(any)?, ...:any):Trigger
 	local touched = Instance.new("BindableEvent")
 	local touchEnded = Instance.new("BindableEvent")
-	local extra = ...
+	local extra = if 0 < select("#", ...) then {...} else false
 	
 	local self = {
 		Touched = touched.Event,
@@ -39,7 +39,7 @@ function Trigger.new(touchPart:BasePart, debounce:number?, partFilter:(BasePart)
 	
 	touchPart.Touched:Connect(function (hit)
 		if partFilter then
-			local res = partFilter(hit, extra)
+			local res = if extra then partFilter(hit, unpack(extra)) else partFilter(hit)
 			if not res then return end
 			touches[hit] = res
 			hit = res
