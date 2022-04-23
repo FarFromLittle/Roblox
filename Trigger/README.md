@@ -9,41 +9,22 @@ There's also a part filtering feature to control which part gets sent to the eve
 <summary>Example usage</summary>
 
 ```lua
+local Trigger = require(game.ReplicatedStorage.Trigger)
 
--- Add as a LocalScript to StarterCharacterScripts and scatter
--- a few parts around the workspace tagged with "Interactive"
+local touchPart = script.Parent
+local debounce = 0
+local partFilter = touchPart.FindFirstAncestorOfClass
+local className = "Model"
 
-local Trigger = require(game:GetService("ReplicatedStorage"):WaitForChild("Trigger"))
+local trigger = Trigger.new(touchPart, debounce, partFilter, className)
 
-local character = script.Parent
-local humanoid = character:WaitForChild("Humanoid")
-local rootPart = character:WaitForChild("HumanoidRootPart")
-
-local touchPart = Instance.new("Part", character)
-touchPart.BrickColor = BrickColor.Blue()
-touchPart.CFrame = rootPart.CFrame
-touchPart.Material = Enum.Material.ForceField
-touchPart.Shape = Enum.PartType.Ball
-touchPart.Size = Vector3.new(7, 7, 7)
-
-local touchWeld = Instance.new("Weld", touchPart)
-touchWeld.Part0 = rootPart
-touchWeld.Part1 = touchPart
-
-local function partFilter(hit)
-	return game:GetService("CollectionService"):HasTag(hit, "Interactive") and hit
-end
-
-local trigger = Trigger.new(touchPart, partFilter)
-
-trigger.Touched:Connect(function (hit)
-	touchPart.BrickColor = BrickColor.Green()
+trigger.Touched:Connect(function (mdl)
+	print("Hello", mdl.Name)
 end)
 
-trigger.TouchEnded:Connect(function (hit)
-	touchPart.BrickColor = BrickColor.Blue()
+trigger.TouchEnded:Connect(function (mdl)
+	print("Goodbye", mdl.Name)
 end)
-
 ```
 </details>
 
