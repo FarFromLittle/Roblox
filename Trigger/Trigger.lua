@@ -63,7 +63,7 @@ end
 --[[ End Filters ]]
 
 local function ontouch(self, part, event)
-	if self.TouchingParts[part] or part.Name == HumanoidRootPart then return end
+	if self.TouchingParts[part] then return end
 	
 	if self.PartFilter then
 		local res
